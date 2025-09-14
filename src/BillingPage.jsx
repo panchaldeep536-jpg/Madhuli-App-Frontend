@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { Card, Row, Col, Button, Form, Collapse } from "react-bootstrap";
+import { Card, Row, Col, Button, Form, Collapse, Spinner } from "react-bootstrap";
 
 const BillingPage = () => {
     const [items, setItems] = useState([]);
@@ -10,13 +10,23 @@ const BillingPage = () => {
     const [newName, setNewName] = useState("");
     const [newPrice, setNewPrice] = useState("");
     const [showForm, setShowForm] = useState(false);
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         fetchItems();
     }, []);
 
-    const fetchItems = () => {
-        axios.get("https://madhuli-backend.onrender.com/api/items").then(res => setItems(res.data));
+    const fetchItems = async () => {
+        try {
+            setLoading(true);
+            const res = await axios.get("https://madhuli-backend.onrender.com/api/items");
+            setItems(res.data);
+        } catch (err) {
+            console.error(err);
+            alert("Error fetching items");
+        } finally {
+            setLoading(false);
+        }
     };
 
     const addQty = (item) => {
@@ -42,20 +52,28 @@ const BillingPage = () => {
     };
 
     const handleSubmitBill = async () => {
-        const billItems = items
-            .filter(i => cart[i._id])
-            .map(i => ({ name: i.name, price: i.price, qty: cart[i._id] }));
+        try {
+            setLoading(true);
+            const billItems = items
+                .filter(i => cart[i._id])
+                .map(i => ({ name: i.name, price: i.price, qty: cart[i._id] }));
 
-        await axios.post("https://madhuli-backend.onrender.com/api/bills", { items: billItems, total });
-        setCart({});
-        setTotal(0);
-        alert("Bill saved!");
+            await axios.post("https://madhuli-backend.onrender.com/api/bills", { items: billItems, total });
+            setCart({});
+            setTotal(0);
+        } catch (err) {
+            console.error(err);
+            alert("Error saving bill");
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleAddItem = async (e) => {
         e.preventDefault();
         if (!newName || !newPrice) return alert("Please enter name and price");
         try {
+            setLoading(true);
             await axios.post("https://madhuli-backend.onrender.com/api/items", {
                 name: newName,
                 price: parseFloat(newPrice),
@@ -67,17 +85,28 @@ const BillingPage = () => {
         } catch (err) {
             console.error(err);
             alert("Error adding item");
+        } finally {
+            setLoading(false);
         }
     };
 
     const handleDeleteItem = async (id, name) => {
         if (!window.confirm(`Are you sure you want to delete "${name}"?`)) return;
         try {
+            setLoading(true);
             await axios.delete(`https://madhuli-backend.onrender.com/api/items/${id}`);
+            const newCart = { ...cart };
+            if (newCart[id]) {
+                delete newCart[id];
+                setCart(newCart);
+                calcTotal(newCart);
+            }
             fetchItems();
         } catch (err) {
             console.error(err);
             alert("Error deleting item");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -120,21 +149,41 @@ const BillingPage = () => {
             {/* Item Cards */}
             <Row>
                 {items.map(item => (
-                    <Col xs={12} key={item._id} className="mb-2">
-                        <Card className="p-2">
-                            <Card.Body className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
-                                <div className="mb-2 mb-md-0">
-                                    <Card.Title>{item.name}</Card.Title>
-                                    <Card.Text>₹{item.price}</Card.Text>
+                    <Col xs={6} md={4} lg={3} key={item._id} className="mb-3">
+                        <Card className="h-100 shadow-sm">
+                            <Card.Body className="d-flex flex-column justify-content-between p-2">
+                                {/* Item info */}
+                                <div>
+                                    <Card.Title className="fs-6 mb-1">{item.name}</Card.Title>
+                                    <Card.Text className="text-muted mb-2">₹{item.price}</Card.Text>
                                 </div>
-                                <div className="d-flex align-items-center mb-2 mb-md-0">
-                                    <Button variant="success" size="lg" className="me-2 py-1 px-3" onClick={() => addQty(item)}>+</Button>
-                                    <span className="mx-2 fs-5">{cart[item._id] || 0}</span>
-                                    <Button variant="danger" size="lg" className="ms-2 py-1 px-3" onClick={() => removeQty(item)}>-</Button>
+
+                                {/* Quantity controls */}
+                                <div className="d-flex justify-content-between align-items-center">
+                                    <Button
+                                        variant="success"
+                                        size="sm"
+                                        className="py-0 px-2"
+                                        onClick={() => addQty(item)}
+                                    >
+                                        +
+                                    </Button>
+                                    <span className="mx-2">{cart[item._id] || 0}</span>
+                                    <Button
+                                        variant="danger"
+                                        size="sm"
+                                        className="py-0 px-2"
+                                        onClick={() => removeQty(item)}
+                                    >
+                                        -
+                                    </Button>
                                 </div>
+
+                                {/* Delete */}
                                 <Button
                                     variant="outline-danger"
-                                    className="mt-2 mt-md-0 py-1 px-3"
+                                    size="sm"
+                                    className="mt-2 w-100"
                                     onClick={() => handleDeleteItem(item._id, item.name)}
                                 >
                                     Delete
@@ -145,12 +194,31 @@ const BillingPage = () => {
                 ))}
             </Row>
 
+
             {/* Total + Submit */}
-            <h3 className="mt-3">Total: ₹{total}</h3>
-            <Button className="w-100 mt-2 mb-3" size="lg" onClick={handleSubmitBill} disabled={!total}>
-                Submit Bill
-            </Button>
-        </div>
+            <div
+                className="position-fixed bottom-0 start-0 end-0 bg-dark text-light p-2 border-top shadow"
+                style={{ zIndex: 1050 }}
+            >
+                <div className="d-flex justify-content-between align-items-center">
+                    <h3 className="mb-0">Total: ₹{total}</h3>
+                    <Button
+                        className="ms-3"
+                        size="lg"
+                        onClick={handleSubmitBill}
+                        disabled={!total}
+                    >
+                        Submit Bill
+                    </Button>
+                </div>
+            </div>
+
+            {loading && (
+                <div className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center bg-dark bg-opacity-75" style={{ zIndex: 2000 }}>
+                    <Spinner animation="border" role="status" variant="light" />
+                </div>
+            )}
+        </div >
     );
 };
 
