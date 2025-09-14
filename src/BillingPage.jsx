@@ -16,7 +16,7 @@ const BillingPage = () => {
     }, []);
 
     const fetchItems = () => {
-        axios.get("https://your-backend.onrender.com/api/items").then(res => setItems(res.data));
+        axios.get("https://madhuli-server.onrender.com/api/items").then(res => setItems(res.data));
     };
 
     const addQty = (item) => {
@@ -46,7 +46,7 @@ const BillingPage = () => {
             .filter(i => cart[i._id])
             .map(i => ({ name: i.name, price: i.price, qty: cart[i._id] }));
 
-        await axios.post("https://your-backend.onrender.com/api/bills", { items: billItems, total });
+        await axios.post("https://madhuli-server.onrender.com/api/bills", { items: billItems, total });
         setCart({});
         setTotal(0);
         alert("Bill saved!");
@@ -56,7 +56,7 @@ const BillingPage = () => {
         e.preventDefault();
         if (!newName || !newPrice) return alert("Please enter name and price");
         try {
-            await axios.post("https://your-backend.onrender.com/api/items", {
+            await axios.post("https://madhuli-server.onrender.com/api/items", {
                 name: newName,
                 price: parseFloat(newPrice),
             });
@@ -73,7 +73,7 @@ const BillingPage = () => {
     const handleDeleteItem = async (id, name) => {
         if (!window.confirm(`Are you sure you want to delete "${name}"?`)) return;
         try {
-            await axios.delete(`https://your-backend.onrender.com/api/items/${id}`);
+            await axios.delete(`https://madhuli-server.onrender.com/api/items/${id}`);
             fetchItems();
         } catch (err) {
             console.error(err);

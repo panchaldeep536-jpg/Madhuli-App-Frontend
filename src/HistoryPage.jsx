@@ -13,7 +13,7 @@ const HistoryPage = () => {
 
     const fetchBills = async () => {
         try {
-            const res = await axios.get("https://your-backend.onrender.com/api/bills");
+            const res = await axios.get("https://madhuli-server.onrender.com/api/bills");
             setBills(res.data);
 
             const today = new Date().toDateString();
@@ -38,7 +38,7 @@ const HistoryPage = () => {
     const handleClearHistory = async () => {
         if (!window.confirm("Are you sure you want to clear all history?")) return;
         try {
-            await axios.delete("https://your-backend.onrender.com/api/bills");
+            await axios.delete("https://madhuli-server.onrender.com/api/bills");
             fetchBills();
         } catch (err) {
             console.error(err);
