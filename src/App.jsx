@@ -10,7 +10,18 @@ function App() {
             {/* Dark Navbar */}
             <Navbar bg="dark" variant="dark" expand="sm">
                 <Container>
-                    <Navbar.Brand>Madhuli</Navbar.Brand>
+                    <Navbar.Brand as={NavLink} to="/" className="d-flex align-items-center">
+                        <img
+                            src="/Madhuli.png"
+                            alt="Madhuli Logo"
+                            style={{
+                                height: "40px",
+                                width: "auto",
+                                objectFit: "contain"
+                            }}
+                        />
+                    </Navbar.Brand>
+
                     <Navbar.Toggle aria-controls="basic-navbar-nav" />
                     <Navbar.Collapse id="basic-navbar-nav">
                         <Nav className="ms-auto">
@@ -26,7 +37,7 @@ function App() {
             </Navbar>
 
             {/* Main Content */}
-            <Container fluid className="bg-dark text-light min-vh-100 p-3">
+            <Container fluid className="bg-dark text-light min-vh-100 p-1">
                 <Routes>
                     <Route path="/" element={<BillingPage />} />
                     <Route path="/history" element={<HistoryPage />} />
